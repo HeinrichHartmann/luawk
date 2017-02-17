@@ -28,15 +28,14 @@ while true do
     post[#post+1] = print
   elseif carg == "-e" then
     shift()
-    process = loadstring(carg)
+    process, err = loadstring(carg)
   elseif carg == "-f" then
     shift()
-    process = loadfile(carg)
+    process, err = loadfile(carg)
   end
   shift()
 end
-
-
+if not process then error(err) end
 
 for l in io.lines() do
   -- _ needs to be global, not shadowed by loop variable in this block
