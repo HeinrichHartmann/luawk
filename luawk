@@ -2,8 +2,36 @@
 
 json = require"dkjson"
 
-for line in io.lines() do
-  _ = json.decode(line)
-  loadstring(arg[1])()
-  print(json.encode(_))
+local prep = {}
+local post = {}
+local function applyall(arr, _)
+  for i, f in ipairs(arr) do
+    _ = f(_)
+  end
+  return _
+end
+local cmd = ""
+local shift = function()
+  table.remove(arg,1)
+end
+
+while true do
+  local carg = arg[1]
+  if not carg then break end
+  if carg == "-j" then -- process json records
+    prep[#prep+1] = json.decode
+    post[#post+1] = json.encode
+  elseif carg == "-p" then -- print out results after processing
+    post[#post+1] = print
+  else
+    cmd = cmd .. " " .. carg
+  end
+  shift()
+end
+
+for l in io.lines() do
+  -- _ needs to be global, not shadowed by loop variable in this block
+  _ = applyall(prep, l)
+  loadstring(cmd)()
+  applyall(post, _)
 end
