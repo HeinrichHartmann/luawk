@@ -31,7 +31,7 @@ while true do
     process = loadstring(carg)
   elseif carg == "-f" then
     shift()
-    process = load(carg)
+    process = loadfile(carg)
   end
   shift()
 end
