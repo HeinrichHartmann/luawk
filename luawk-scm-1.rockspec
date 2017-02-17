@@ -8,11 +8,14 @@ description = {
    license = "MIT"
 }
 dependencies = {
-   "lua ~> 5.1"
+   "lua ~> 5.1",
+   "dkjson > 2.0"
 }
 build = {
    type = "builtin",
    modules = {
-      luawk = "luawk.lua"
+   },
+   install = {
+     bin = { "luawk" }
    }
 }
