@@ -1,5 +1,5 @@
 package = "luawk"
-version = "scm-1"
+version = "scm-1.1"
 source = {
    url = "git+https://github.com/HeinrichHartmann/luawk"
 }
