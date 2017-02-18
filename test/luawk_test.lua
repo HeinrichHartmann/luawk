@@ -1,7 +1,7 @@
 require "basicio"
 
 function test(input, args, expected)
-  local cmd = string.format([[ echo '%s' | ./luawk %s ]], input, args)
+  local cmd = string.format([[ echo '%s' | ../luawk %s ]], input, args)
   local out = exec(cmd)
   if out == expected then
     print "OK"
