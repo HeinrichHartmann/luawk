@@ -1,45 +1,47 @@
 #!/usr/bin/env lua
 
-json = require"dkjson"
+json = require "cjson"
 
-local prep = {}
-local post = {}
-local function applyall(arr, _)
-  for i, f in ipairs(arr) do
-    _ = f(_)
-  end
-  return _
-end
+printj = function(...) print(json.encode(...)) end
 
 local cmd = "true"
+
 carg = arg[1]
 local shift = function()
   table.remove(arg,1)
   carg = arg[1]
 end
 
+-- flags
+local do_json = false
+local do_print = false
 local process = function() end
+
 while true do
   if not carg then break end
-  if carg == "-j" then -- process json records
-    prep[#prep+1] = json.decode
-    post[#post+1] = json.encode
-  elseif carg == "-p" then -- print out results after processing
-    post[#post+1] = print
-  elseif carg == "-e" then
-    shift()
-    process, err = loadstring(carg)
+  if carg == "-j" then
+    do_json = true
+  elseif carg == "-p" then
+    do_print = true
   elseif carg == "-f" then
     shift()
     process, err = loadfile(carg)
+  elseif carg == "-l" then
+    shift()
+    require(carg)
+  else
+    process, err = loadstring(table.concat(arg, " "))
+    break
   end
   shift()
 end
 if not process then error(err) end
 
 for l in io.lines() do
-  -- _ needs to be global, not shadowed by loop variable in this block
-  _ = applyall(prep, l)
+  -- _ needs to be in global env, not shadowed by loop variable in this block
+  _ = l
+  if do_json then _ = json.decode(_) end
   process()
-  applyall(post, _)
+  if do_json  then _ = json.encode(_) end
+  if do_print then print(_) end
 end
