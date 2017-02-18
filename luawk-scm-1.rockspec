@@ -9,7 +9,7 @@ description = {
 }
 dependencies = {
    "lua ~> 5.1",
-   "cjson > 2.1.0",
+   "lua-cjson >= 2.1.0",
    "basics",
 }
 build = {
