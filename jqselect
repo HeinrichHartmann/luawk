@@ -1,0 +1,39 @@
+#!/usr/bin/env lua
+--
+-- Usage: jqselect fields [fields...]
+--
+--   Selects the named fields from json records provided on stdin and outputs them as CSV file
+--
+-- Example:
+--
+--     $ echo '{"a":1,"b":2,"c":3}' | jqselect a c
+--     > a,c
+--     > 1,3
+--
+json = require "cjson"
+local sep, space, quote, dquote = ",", " ", '"', '""'
+function csvescape(val)
+  local tval = type(val)
+  if tval == "string" then
+    if val:match(quote) then
+      return quote .. val:gsub(quote,dquote) .. quote
+    elseif val:match(space) or val:match(sep) then
+      return quote .. val .. quote
+    else -- no spaces no quotes no separators
+      return val
+    end
+  elseif tval == "number" then
+    return tostring(val)
+  else
+    return ''
+  end
+end
+print(table.concat(arg, sep)) -- print headline
+for line in io.lines() do
+  local rec = json.decode(line)
+  local out = {}
+  for i, key in ipairs(arg) do
+    out[i] = csvescape(rec[key])
+  end
+  print(table.concat(out,sep))
+end

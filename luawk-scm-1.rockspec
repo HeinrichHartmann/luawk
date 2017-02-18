@@ -17,6 +17,6 @@ build = {
    modules = {
    },
    install = {
-     bin = { "luawk" }
+     bin = { "luawk", "jqselect" }
    }
 }
