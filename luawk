@@ -49,11 +49,14 @@ while true do
 end
 
 BEGIN()
+local c = 0
 for l in io.lines() do
   -- _ needs to be in global env, not shadowed by loop variable in this block
   _ = l
+  c = c+1
   if do_json then _ = json.decode(_) end
-  process()
+  local ok = pcall(process)
+  if not ok then io.stderr:write(string.format("Line %d: Processing failed\n", c)) end
   if do_json  then _ = json.encode(_) end
   if do_print then print(_) end
 end
