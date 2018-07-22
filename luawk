@@ -1,5 +1,28 @@
 #!/usr/bin/env lua
-
+--
+-- NAME
+--        luawk - process line oriented records with lua
+--
+-- SYNOPSIS
+--        luawk [-j] [-p] [-f file] [-l library] [-BEGIN block] [-END block] cmd ...
+--
+-- OPTIONS
+--        -j    parse input lines as JSON objects
+--
+--        -p    print transformed records
+--
+--        -f  file
+--              load a file before processing
+--
+--        -l  lib
+--              reqire a library before processing
+--
+--        -BEGIN block
+--              execute block before processing
+--
+--        -END block
+--              execute block after processing
+--
 json = require "cjson"
 
 printj = function(...) print(json.encode(...)) end
