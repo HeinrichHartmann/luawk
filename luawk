@@ -26,6 +26,7 @@
 json = require "cjson"
 
 printj = function(...) print(json.encode(...)) end
+printf = function(...) print(string.format(...)) end
 
 local cmd = "true"
 
