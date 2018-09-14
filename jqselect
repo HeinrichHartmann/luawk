@@ -10,7 +10,7 @@
 --     > a,c
 --     > 1,3
 --
-json = require "cjson"
+json = require "dkjson"
 local sep, space, quote, dquote = ",", " ", '"', '""'
 function csvescape(val)
   local tval = type(val)
