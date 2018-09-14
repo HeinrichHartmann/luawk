@@ -1,29 +1,35 @@
 #!/usr/bin/env lua
---
--- NAME
---        luawk - process line oriented records with lua
---
--- SYNOPSIS
---        luawk [-j] [-p] [-f file] [-l library] [-BEGIN block] [-END block] cmd ...
---
--- OPTIONS
---        -j    parse input lines as JSON objects
---
---        -p    print transformed records
---
---        -f  file
---              load a file before processing
---
---        -l  lib
---              reqire a library before processing
---
---        -BEGIN block
---              execute block before processing
---
---        -END block
---              execute block after processing
---
-json = require "cjson"
+local json = require "dkjson"
+
+-- prefer modules from local path
+table.insert(package.path, 1, "./")
+local USAGE=[[
+NAME
+       luawk - process line oriented records with lua
+
+SYNOPSIS
+       luawk [-j] [-p] [-f file] [-l library] [-BEGIN block] [-END block] cmd ...
+
+OPTIONS
+       -j    parse input lines as JSON objects
+
+       -p    print transformed records
+
+       -f  file
+             load a file before processing
+
+       -l  lib
+             reqire a library before processing
+
+       -BEGIN block
+             execute block before processing
+
+       -END block
+             execute block after processing
+
+       -m  lib
+             Read process,BEGIN,END from a library
+]]
 
 printj = function(...) print(json.encode(...)) end
 printf = function(...) print(string.format(...)) end
@@ -53,6 +59,12 @@ while true do
     shift()
     process, err = loadfile(carg)
     if err then error(err) end
+  elseif carg == "-m" then
+    shift()
+    local M = require(carg)
+    process = M.process
+    BEGIN = M.BEGIN or BEGIN
+    END = M.END or END
   elseif carg == "-l" then
     shift()
     require(carg)
