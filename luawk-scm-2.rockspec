@@ -8,8 +8,7 @@ description = {
    license = "MIT"
 }
 dependencies = {
-   "lua ~> 5.1",
-   "lua-cjson >= 2.1.0",
+   "dkjson >= 2.5",
    "basics",
 }
 build = {

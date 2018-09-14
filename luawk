@@ -2,13 +2,13 @@
 local json = require "dkjson"
 
 -- prefer modules from local path
-table.insert(package.path, 1, "./")
+package.path = "./.lua;" .. package.path
 local USAGE=[[
 NAME
-       luawk - process line oriented records with lua
+       *luawk* process line oriented records with lua
 
 SYNOPSIS
-       luawk [-j] [-p] [-f file] [-l library] [-BEGIN block] [-END block] cmd ...
+       luawk [options] -- commands ...
 
 OPTIONS
        -j    parse input lines as JSON objects
@@ -49,9 +49,26 @@ local process = function() end
 local BEGIN = function() end
 local END = function() end
 
+function LOOP()
+  BEGIN()
+  local c = 0
+  for l in io.lines() do
+    -- _ needs to be in global env, not shadowed by loop variable in this block
+    _ = l
+    c = c+1
+    if do_json then _ = json.decode(_) end
+    local ok = pcall(process)
+    if not ok then io.stderr:write(string.format("Line %d: Processing failed\n", c)) end
+    if do_json  then _ = json.encode(_) end
+    if do_print then print(_) end
+  end
+  END()
+end
+
 while true do
-  if not carg then break end
-  if carg == "-j" then
+  if not carg then
+    break
+  elseif carg == "-j" then
     do_json = true
   elseif carg == "-p" then
     do_print = true
@@ -76,24 +93,18 @@ while true do
     shift()
     END, err = loadstring(carg)
     if err then error(err) end
-  else
+  elseif carg == "--" then
+    shift()
     process, err = loadstring(table.concat(arg, " "))
     if err then error(err) end
     break
+  elseif carg == "-h" or carg == "--help" then
+    print(USAGE)
+    os.exit(0)
+  else
+    print(USAGE)
+    os.exit(0)
   end
   shift()
 end
-
-BEGIN()
-local c = 0
-for l in io.lines() do
-  -- _ needs to be in global env, not shadowed by loop variable in this block
-  _ = l
-  c = c+1
-  if do_json then _ = json.decode(_) end
-  local ok = pcall(process)
-  if not ok then io.stderr:write(string.format("Line %d: Processing failed\n", c)) end
-  if do_json  then _ = json.encode(_) end
-  if do_print then print(_) end
-end
-END()
+LOOP()
