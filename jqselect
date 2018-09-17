@@ -14,53 +14,29 @@ json = require "dkjson"
 
 local HEAD = {}
 local SELECT = {}
-local TYPES = {}
 
--- A = ".start.id" B="ID"
-local function process_sel_as_type(A, name, tpe)
+-- A = ".start.id" name="ID:INTEGER"
+local function process_sel_as(A, name)
   local path = {}
   string.gsub(A,"([^.]+)", function(tok) table.insert(path, tok) end)
   HEAD[#HEAD+1] = name
   SELECT[name] = path
-  TYPES[#TYPES+1] = tpe
 end
-local function process_sel_type(A, tpe)
-  local name = string.match(A,"[^.]*$")
-  process_sel_as_type(A, name, "TEXT")
-end
-local function process_sel_as(A, B)
-  process_sel_as_type(A, B, "TEXT")
-end
--- A = '.start.id'
+-- A = '.start'
 local function process_sel(A)
   local name = string.match(A,"[^.]*$")
-  process_sel_as_type(A, name, "TEXT")
+  process_sel_as(A, name)
 end
--- pargs = ".args.q as query : INTEGER"
+-- pargs = ".args.q as query:INTEGER"
 local function process_part(part)
-  _, n = string.gsub(part,"([._a-zA-Z0-9]+)[ ]+as[ ]+([a-zA-Z0-9_]+)[ ]*:[ ]*([A-Z]+)", process_sel_as_type)
+  _, n = string.gsub(part,"([.:_a-zA-Z0-9]+)[ ]+as[ ]+([.:_a-zA-Z0-9]+)", process_sel_as)
   if n > 0 then return end
-  _, n = string.gsub(part,"([._a-zA-Z0-9]+)[ ]+as[ ]+([a-zA-Z0-9_]+)", process_sel_as)
-  if n > 0 then return end
-  _, n = string.gsub(part,"([._a-zA-Z0-9]+)[ ]*:[ ]*([A-Z]+)", process_sel_type)
-  if n > 0 then return end
-  string.gsub(part,"([._a-zA-Z0-9]+)", process_sel)
+  string.gsub(part,"([.:_a-zA-Z0-9]+)", process_sel)
 end
 -- argsr = ".start, .args.q as query, .id"
 local function process_argstr(A)
   string.gsub(A," +", " ")
   string.gsub(A, "([^,]+)", process_part)
-end
-
-if arg[1] == "--schema" then
-  table.remove(arg, 1)
-  process_argstr(table.concat(arg, " "))
-  buf = {}
-  for i,h in ipairs(HEAD) do
-    buf[#buf+1] = string.format("%s %s", HEAD[i], TYPES[i])
-  end
-  print(table.concat(buf,","))
-  os.exit(0)
 end
 
 process_argstr(table.concat(arg, " "))
