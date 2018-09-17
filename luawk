@@ -18,6 +18,9 @@ OPTIONS
        -f  file
              load a file before processing
 
+       -e  var value
+             set global string variable to value
+
        -l  lib
              reqire a library before processing
 
@@ -29,10 +32,15 @@ OPTIONS
 
        -m  lib
              Read process,BEGIN,END from a library
+
+       -d    turn on debug output
 ]]
 
 printj = function(...) print(json.encode(...)) end
 printf = function(...) print(string.format(...)) end
+warn   = function(str) io.stderr:write(str .. "\n") end
+warnj  = function(...) warn(json.encode(...)) end
+warnf  = function(...) warn(string.format(...)) end
 
 local cmd = "true"
 
@@ -40,12 +48,14 @@ carg = arg[1]
 local shift = function()
   table.remove(arg,1)
   carg = arg[1]
+  return carg
 end
 
 -- flags
 local do_json = false
 local do_print = false
-local process = function() end
+local do_debug = false
+local PROCESS = function() end
 local BEGIN = function() end
 local END = function() end
 
@@ -57,12 +67,20 @@ function LOOP()
     _ = l
     c = c+1
     if do_json then _ = json.decode(_) end
-    local ok = pcall(process)
-    if not ok then io.stderr:write(string.format("Line %d: Processing failed\n", c)) end
+    local ok, err = pcall(PROCESS,_)
+    if not ok then
+      if debug then error(err) end
+      io.stderr:write(string.format("Line %d: Processing failed\n", c))
+    end
     if do_json  then _ = json.encode(_) end
     if do_print then print(_) end
   end
   END()
+end
+
+if not carg then
+  print(USAGE)
+  os.exit(1)
 end
 
 while true do
@@ -70,16 +88,14 @@ while true do
     break
   elseif carg == "-j" then
     do_json = true
+  elseif carg == "-d" then
+    do_debug = true
   elseif carg == "-p" then
     do_print = true
   elseif carg == "-f" then
     shift()
-    process, err = loadfile(carg)
-    if err then error(err) end
-  elseif carg == "-m" then
-    shift()
-    local M = require(carg)
-    process = M.process
+    local M = loadfile(carg)()
+    PROCESS = M.PROCESS
     BEGIN = M.BEGIN or BEGIN
     END = M.END or END
   elseif carg == "-l" then
@@ -93,11 +109,14 @@ while true do
     shift()
     END, err = loadstring(carg)
     if err then error(err) end
-  elseif carg == "--" then
+  elseif carg == "-e" then
+    shift(); local k = carg or error("No key argument provided")
+    shift(); local v = carg or error("No value argument provided")
+    _G[k] = v
+  elseif carg == "-PROCESS" then
     shift()
-    process, err = loadstring(table.concat(arg, " "))
+    PROCESS, err = loadstring(carg)
     if err then error(err) end
-    break
   elseif carg == "-h" or carg == "--help" then
     print(USAGE)
     os.exit(0)
@@ -107,4 +126,5 @@ while true do
   end
   shift()
 end
+
 LOOP()

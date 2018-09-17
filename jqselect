@@ -11,6 +11,60 @@
 --     > 1,3
 --
 json = require "dkjson"
+
+local HEAD = {}
+local SELECT = {}
+local TYPES = {}
+
+-- A = ".start.id" B="ID"
+local function process_sel_as_type(A, name, tpe)
+  local path = {}
+  string.gsub(A,"([^.]+)", function(tok) table.insert(path, tok) end)
+  HEAD[#HEAD+1] = name
+  SELECT[name] = path
+  TYPES[#TYPES+1] = tpe
+end
+local function process_sel_type(A, tpe)
+  local name = string.match(A,"[^.]*$")
+  process_sel_as_type(A, name, "TEXT")
+end
+local function process_sel_as(A, B)
+  process_sel_as_type(A, B, "TEXT")
+end
+-- A = '.start.id'
+local function process_sel(A)
+  local name = string.match(A,"[^.]*$")
+  process_sel_as_type(A, name, "TEXT")
+end
+-- pargs = ".args.q as query : INTEGER"
+local function process_part(part)
+  _, n = string.gsub(part,"([._a-zA-Z0-9]+)[ ]+as[ ]+([a-zA-Z0-9_]+)[ ]*:[ ]*([A-Z]+)", process_sel_as_type)
+  if n > 0 then return end
+  _, n = string.gsub(part,"([._a-zA-Z0-9]+)[ ]+as[ ]+([a-zA-Z0-9_]+)", process_sel_as)
+  if n > 0 then return end
+  _, n = string.gsub(part,"([._a-zA-Z0-9]+)[ ]*:[ ]*([A-Z]+)", process_sel_type)
+  if n > 0 then return end
+  string.gsub(part,"([._a-zA-Z0-9]+)", process_sel)
+end
+-- argsr = ".start, .args.q as query, .id"
+local function process_argstr(A)
+  string.gsub(A," +", " ")
+  string.gsub(A, "([^,]+)", process_part)
+end
+
+if arg[1] == "--schema" then
+  table.remove(arg, 1)
+  process_argstr(table.concat(arg, " "))
+  buf = {}
+  for i,h in ipairs(HEAD) do
+    buf[#buf+1] = string.format("%s %s", HEAD[i], TYPES[i])
+  end
+  print(table.concat(buf,","))
+  os.exit(0)
+end
+
+process_argstr(table.concat(arg, " "))
+
 local sep, space, quote, dquote = ",", " ", '"', '""'
 function csvescape(val)
   local tval = type(val)
@@ -28,12 +82,20 @@ function csvescape(val)
     return ''
   end
 end
-print(table.concat(arg, sep)) -- print headline
+print(table.concat(HEAD, sep)) -- print headline
 for line in io.lines() do
   local rec = json.decode(line)
   local out = {}
-  for i, key in ipairs(arg) do
-    out[i] = csvescape(rec[key])
+  for i, h in ipairs(HEAD) do
+    local cur = rec
+    for _, tok in ipairs(SELECT[h]) do
+      cur = cur[tok]
+      if not cur then
+        cur = ""
+        break
+      end
+    end
+    out[i] = csvescape(cur)
   end
   print(table.concat(out,sep))
 end
