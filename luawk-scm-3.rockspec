@@ -1,5 +1,5 @@
 package = "luawk"
-version = "scm-2"
+version = "scm-3"
 source = {
    url = "git+https://github.com/HeinrichHartmann/luawk"
 }
@@ -16,6 +16,6 @@ build = {
    modules = {
    },
    install = {
-     bin = { "luawk", "jqselect" }
+     bin = { "luawk", "jselect", "head2sql" }
    }
 }
